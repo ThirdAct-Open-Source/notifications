@@ -9,12 +9,12 @@ export type AddressList = ({
     transportName: string
 })[];
 
-export class Notifications extends EventEmitter {
+export class Notifications<R extends RenderContextOptions> extends EventEmitter {
     protected links: Map<string, unknown> = new Map<string, unknown>();
     constructor(
         public templates: Map<string, Template<unknown>> = new Map<string, Template<unknown>>(),
         public transports: Map<string, Transport> = new Map<string, Transport>(),
-        public renderOptions?: RenderContextOptions
+        public renderOptions?: R
     ) {
         super({ wildcard: true, delimiter: '.' });
     }
@@ -56,30 +56,54 @@ export class Notifications extends EventEmitter {
         this.transports.delete(transportName);
     }
 
+    public async createRenderContext<D>(data: D, opts?: RenderContextOptions): Promise<RenderContext<D>> {
+        return RenderContext.createRenderContext(data, opts);
+    }
+
+
+    protected async notifyInner<D>(
+        ctx: RenderContext<any>,
+        who: AddressList,
+      what: { data?: D, templateName: string, meta?: { [name: string]: unknown } },
+      opts?: Partial<R>
+    ): Promise<void> {
+        for (const { to, from, transportName } of who) {
+            const tmpl = this.templates.get(`${what.templateName}.${transportName}`);
+            const content = await tmpl.render(ctx);
+            await this.emitAsync(`notify.${what.templateName}.${transportName}`, { to, from }, {
+                content,
+                meta: typeof(what) !== 'string' ? what?.meta : void(0)
+            });
+        }
+    }
+
     public async notify<D>(
         who: AddressList,
-        what: { data: D, templateName: string }
+        what: { data?: D, templateName: string, meta?: { [name: string]: unknown } },
+        opts?: Partial<R>
+    ): Promise<void>;
+    public async notify<D>(
+        who: AddressList,
+        what: { data?: D, templateName: string, meta?: { [name: string]: unknown } },
+        opts?: Partial<R>
     ): Promise<void>;
     public async notify(
         who: AddressList,
-        what: { templateName: string }
-    ): Promise<void>;
-    public async notify(
-        who: AddressList,
-        templateName: string
+        templateName: string,
+        opts?: Partial<R>
     ): Promise<void>;
     public async notify<D>(
         who: AddressList,
-        what: { data?: D, templateName: string }|string
+        what: { data?: D, templateName: string, meta?: { [name: string]: unknown } }|string,
+        opts?: Partial<R>
     ): Promise<void> {
         const $what = typeof(what) === 'string' ? { templateName: what } : what;
-        const ctx = RenderContext.createRenderContext($what.data, this.renderOptions);
+        const ctx = await this.createRenderContext($what.data, {
+            ...this.renderOptions,
+            ...(opts || {})
+        });
 
-        for (const { to, from, transportName } of who) {
-            const tmpl = this.templates.get(`${$what.templateName}.${transportName}`);
-            const buf = await tmpl.render(ctx);
-            await this.emitAsync(`notify.${$what.templateName}.${transportName}`, { to, from }, buf);
-        }
+        return this.notifyInner(ctx, who, $what, opts);
     }
 }
 

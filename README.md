@@ -10,4 +10,4 @@ Tests are written in Mocha, to run use `npm test`.
 
 ## License
 
-Etomon Encode Tools is licensed under the GNU LGPL-3.0, a copy of which can be found at [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
+Notifications Lib is licensed under the GNU LGPL-3.0, a copy of which can be found at [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).

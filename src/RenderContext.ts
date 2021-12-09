@@ -15,15 +15,18 @@ export class RenderContext<D> {
         public libs: Map<string, unknown> = new Map<string, unknown>()
     ) {}
 
-    public static createRenderContext<D>(data: D, opts: RenderContextOptions = DEFAULT_RENDER_CONTEXT_OPTIONS) {
+    public static  createLibsFromArray(arr: ([ string, string ]|string)[]) {
         const libs: Map<string, unknown> = new Map<string, unknown>();
-        for (let libEntry of  (opts.libs || [])) {
+        for (let libEntry of  (arr || [])) {
             const libName = Array.isArray(libEntry) ? libEntry[0] : libEntry;
             const libMapping = Array.isArray(libEntry) ? libEntry[1] : libName;
 
             libs.set(libMapping, require(libName));
         }
+        return libs;
+    }
 
-        return new RenderContext(data, libs);
+    public static async createRenderContext<D>(data: D, opts: RenderContextOptions = DEFAULT_RENDER_CONTEXT_OPTIONS) {
+        return new RenderContext(data, RenderContext.createLibsFromArray(opts.libs));
     }
 }

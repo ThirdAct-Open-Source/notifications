@@ -85,7 +85,7 @@ describe('Notifications', async function  () {
 
   describe('notify', function() {
     it('should produce a notification with given params', async function () {
-      const not = new Notifications();
+      const not = new Notifications<any>();
       const transport = new DummyTransport((x: any) => x);
       not.registerTransport(transport);
       not.registerTemplate(template, [
@@ -111,7 +111,9 @@ describe('Notifications', async function  () {
       assert.equal(output.address.to, to);
       assert.equal(output.address.from, from);
       const testCase = require('ejs').render(ejsTemplate, {data});
-      assert.deepEqual(output.payload, Buffer.from(testCase, 'utf8'));
+      assert.deepEqual(output.payload, {
+        content: Buffer.from(testCase, 'utf8')
+      });
     });
   });
 });
