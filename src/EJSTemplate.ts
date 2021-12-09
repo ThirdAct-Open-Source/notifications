@@ -1,7 +1,6 @@
 import {RenderContext} from "./RenderContext";
 import * as ejs from 'ejs';
 
-
 export class EJSTemplate<D> {
     constructor(public name: string, public template: string) { }
     public async render(context: RenderContext<D>): Promise<Buffer> {
