@@ -9,6 +9,11 @@ export type AddressList = ({
     transportName: string
 })[];
 
+
+export class TemplateDoesNotExistError extends Error {
+  constructor(tmplName: string) { super(`Template ${tmplName} does not exist`) }
+}
+
 export class Notifications extends EventEmitter {
     protected links: Map<string, unknown> = new Map<string, unknown>();
     constructor(
@@ -77,6 +82,7 @@ export class Notifications extends EventEmitter {
 
         for (const { to, from, transportName } of who) {
             const tmpl = this.templates.get(`${$what.templateName}.${transportName}`);
+            if (!tmpl) throw  new TemplateDoesNotExistError(`${$what.templateName}.${transportName}`);
             const buf = await tmpl.render(ctx);
             await this.emitAsync(`notify.${$what.templateName}.${transportName}`, { to, from }, buf);
         }
